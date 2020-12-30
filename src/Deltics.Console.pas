@@ -256,7 +256,7 @@ implementation
       begin
         inPropertyRef := FALSE;
 
-        refs.Add(propertyRef.ToLower);
+        refs.Add(STR.Lowercase(propertyRef));
       end
       else if (aMessage[i] = '{') then
       begin
@@ -619,7 +619,7 @@ implementation
   var
     i: Integer;
   begin
-    for i := 0 to Pred(aList.Count) do
+    for i := 0 to High(aList) do
       Console.WriteLn(aList[i]);
   end;
 
