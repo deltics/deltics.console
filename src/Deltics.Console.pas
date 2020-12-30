@@ -19,23 +19,27 @@ interface
     Console = class
     private
       class procedure ParseVariables(var aMessage: String; aArgs: array of const);
+      class function SetColor(aAttr: Word): Word; overload;
+      class function SetColor(aFG: Byte): Word; overload;
+      class function SetColor(aFG, aBG: Byte): Word; overload;
+
+      // TODO: Revisit the way this works:
+      // class procedure ClearProcessingMessage;
+      // class procedure SetProcessingMessage(const aMessage: UnicodeString);
+
+      // TODO: Also to be revisited:
+      // class procedure Write(const aList: TStrings; const aLeftMargin: Integer); overload;
+      class procedure Write(const aList: TStrings; const aLeftMargin, aRightMargin: Integer); overload;
     public
+      class function Attr: Word;
       class function CursorPos: TCursorPos;
       class function Size: TCursorPos;
       class function SetCursorPos(aCoord: TCursorPos): TCursorPos;
       class function Tab(aCols: Word): TCursorPos;
       class function TabTo(aCol: Word): TCursorPos;
 
-      class function Attr: Word;
-      class function SetColor(aAttr: Word): Word; overload;
-      class function SetColor(aFG: Byte): Word; overload;
-      class function SetColor(aFG, aBG: Byte): Word; overload;
-
       class procedure ClearLine(aPos: TCursorPos); overload;
       class procedure ClearLine(aRow: SmallInt); overload;
-
-      class procedure ClearProcessingMessage;
-      class procedure SetProcessingMessage(const aMessage: UnicodeString);
 
       class procedure ErrorLn(const aString: String); overload;
       class procedure ErrorLn(const aString: String; aArgs: array of const); overload;
@@ -46,8 +50,6 @@ interface
 
       class procedure Write(const aList: TStrings); overload;
       class procedure Write(const aList: TStringArray); overload;
-      class procedure Write(const aList: TStrings; const aLeftMargin: Integer); overload;
-      class procedure Write(const aList: TStrings; const aLeftMargin, aRightMargin: Integer); overload;
 
       class procedure Write(const aColor: ConsoleColor; const aString: String); overload;
       class procedure Write(const aString: String); overload;
@@ -115,10 +117,11 @@ implementation
 
 { Console }
 
+(*
   var
     fProcessMessagePos: TCursorPos;
     fProcessMessage: Boolean = FALSE;
-
+*)
 
   class procedure Console.ClearLine(aPos: TCursorPos);
   var
@@ -147,6 +150,7 @@ implementation
   end;
 
 
+(*
   class procedure Console.ClearProcessingMessage;
   begin
     if NOT fProcessMessage then
@@ -157,7 +161,7 @@ implementation
     Console.ClearLine(fProcessMessagePos);
     Console.SetCursorPos(fProcessMessagePos);
   end;
-
+*)
 
   class function Console.CursorPos: TCursorPos;
   var
@@ -404,6 +408,7 @@ implementation
   end;
 
 
+(*
   class procedure Console.SetProcessingMessage(const aMessage: UnicodeString);
   begin
     if NOT fProcessMessage then
@@ -420,6 +425,7 @@ implementation
 
     fProcessMessage := TRUE;
   end;
+*)
 
 
   class function Console.Size: TCursorPos;
@@ -541,7 +547,7 @@ implementation
     attr: Word;
     fg, bg: Byte;
   begin
-    ClearProcessingMessage;
+//    ClearProcessingMessage;
 
     s := aString;
 
@@ -612,11 +618,7 @@ implementation
   class procedure Console.Write(const aList: TStringArray);
   var
     i: Integer;
-//    x, maxLen: Integer;
   begin
-//    x       := aLeftMargin;
-//    maxLen  := Size.Col - x;
-
     for i := 0 to Pred(aList.Count) do
       Console.WriteLn(aList[i]);
   end;
@@ -628,22 +630,20 @@ implementation
   end;
 
 
+(*
   class procedure Console.Write(const aList: TStrings;
                                 const aLeftMargin: Integer);
   begin
     Write(aList, aLeftMargin, 0);
   end;
+*)
 
 
   class procedure Console.Write(const aList: TStrings;
                                 const aLeftMargin, aRightMargin: Integer);
   var
     i: Integer;
-//    x, maxLen: Integer;
   begin
-//    x       := aLeftMargin;
-//    maxLen  := Size.Col - x;
-
     for i := 0 to Pred(aList.Count) do
       Console.WriteLn(aList[i]);
   end;
