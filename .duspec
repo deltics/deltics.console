@@ -1,0 +1,23 @@
+{
+  "id":"deltics.console",
+  "version":"",
+  "summary":"Console output",
+  "tags":[
+    "deltics",
+    "console"
+  ],
+  "copyright":"\u00A92020 Jolyon Direnko-Smith",
+  "language":"en",
+  "content":"source",
+  "dependencies":[
+    "deltics.inc:1.1.0",
+    "deltics.exceptions:1.1.0",
+    "deltics.strings:1.0.0"
+  ],
+  "source":{
+      "files":[
+        "src\\deltics.console.inc",
+        "src\\Deltics.Console.pas"
+      ]
+    }
+}
