@@ -8,6 +8,8 @@ interface
     Deltics.Strings;
 
   type
+    TConsoleAttr = type Word;
+
     TCursorPos = record
       Col: SmallInt;
       Row: SmallInt;
@@ -19,7 +21,6 @@ interface
     Console = class
     private
       class procedure ParseVariables(var aMessage: String; aArgs: array of const);
-      class function SetColor(aAttr: Word): Word; overload;
       class function SetColor(aFG: Byte): Word; overload;
       class function SetColor(aFG, aBG: Byte): Word; overload;
 
@@ -31,9 +32,10 @@ interface
       // class procedure Write(const aList: TStrings; const aLeftMargin: Integer); overload;
       class procedure Write(const aList: TStrings; const aLeftMargin, aRightMargin: Integer); overload;
     public
-      class function Attr: Word;
+      class function Attr: TConsoleAttr;
       class function CursorPos: TCursorPos;
       class function Size: TCursorPos;
+      class function SetAttr(aAttr: TConsoleAttr): TConsoleAttr; overload;
       class function SetCursorPos(aCoord: TCursorPos): TCursorPos;
       class function Tab(aCols: Word): TCursorPos;
       class function TabTo(aCol: Word): TCursorPos;
@@ -331,7 +333,7 @@ implementation
   end;
 
 
-  class function Console.Attr: Word;
+  class function Console.Attr: TConsoleAttr;
   var
     stdOut: THandle;
     csbi: TConsoleScreenBufferInfo;
@@ -344,7 +346,7 @@ implementation
   end;
 
 
-  class function Console.SetColor(aAttr: Word): Word;
+  class function Console.SetAttr(aAttr: TConsoleAttr): TConsoleAttr;
   var
     stdOut: THandle;
     csbi: TConsoleScreenBufferInfo;
