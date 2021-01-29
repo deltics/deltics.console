@@ -1,5 +1,8 @@
 
+{$i deltics.console.inc}
+
   unit Deltics.Console;
+
 
 interface
 
@@ -7,22 +10,22 @@ interface
     Classes,
     Deltics.Strings;
 
-  type
-    TConsoleAttr = type Word;
 
+  type
     TCursorPos = record
       Col: SmallInt;
       Row: SmallInt;
     end;
 
-    ConsoleColor = (BLACK,    DKBLUE, DKGREEN, DKCYAN, DKRED, PURPLE, DKYELLOW, SILVER,
-                    GRAPHITE,   BLUE,   GREEN,   CYAN,   RED,   PINK,   YELLOW, WHITE);
+
+    TConsoleAttr = type Word;
+    TConsoleColor = (BLACK,    DKBLUE, DKGREEN, DKCYAN, DKRED, PURPLE, DKYELLOW, SILVER,
+                     GRAPHITE,   BLUE,   GREEN,   CYAN,   RED,   PINK,   YELLOW, WHITE);
+
 
     Console = class
     private
       class procedure ParseVariables(var aMessage: String; aArgs: array of const);
-      class function SetColor(aFG: Byte): Word; overload;
-      class function SetColor(aFG, aBG: Byte): Word; overload;
 
       // TODO: Revisit the way this works:
       // class procedure ClearProcessingMessage;
