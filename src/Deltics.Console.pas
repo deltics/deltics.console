@@ -1,5 +1,8 @@
 
+{$i deltics.console.inc}
+
   unit Deltics.Console;
+
 
 interface
 
@@ -7,22 +10,22 @@ interface
     Classes,
     Deltics.Strings;
 
-  type
-    TConsoleAttr = type Word;
 
+  type
     TCursorPos = record
       Col: SmallInt;
       Row: SmallInt;
     end;
 
-    ConsoleColor = (BLACK,    DKBLUE, DKGREEN, DKCYAN, DKRED, PURPLE, DKYELLOW, SILVER,
-                    GRAPHITE,   BLUE,   GREEN,   CYAN,   RED,   PINK,   YELLOW, WHITE);
+
+    TConsoleAttr = type Word;
+    TConsoleColor = (BLACK,    DKBLUE, DKGREEN, DKCYAN, DKRED, PURPLE, DKYELLOW, SILVER,
+                     GRAPHITE,   BLUE,   GREEN,   CYAN,   RED,   PINK,   YELLOW, WHITE);
+
 
     Console = class
     private
       class procedure ParseVariables(var aMessage: String; aArgs: array of const);
-      class function SetColor(aFG: Byte): Word; overload;
-      class function SetColor(aFG, aBG: Byte): Word; overload;
 
       // TODO: Revisit the way this works:
       // class procedure ClearProcessingMessage;
@@ -31,11 +34,17 @@ interface
       // TODO: Also to be revisited:
       // class procedure Write(const aList: TStrings; const aLeftMargin: Integer); overload;
       class procedure Write(const aList: TStrings; const aLeftMargin, aRightMargin: Integer); overload;
+      class function SetAttr(aFgAttr, aBgAttr: Byte): TConsoleAttr; overload;
+      class function SetAttr(aAttr: TConsoleAttr): TConsoleAttr; overload;
     public
       class function Attr: TConsoleAttr;
       class function CursorPos: TCursorPos;
       class function Size: TCursorPos;
-      class function SetAttr(aAttr: TConsoleAttr): TConsoleAttr; overload;
+      class procedure PopAttr;
+      class procedure PushAttr(aAttr: TConsoleAttr);
+      class function SetBackground(aColor: TConsoleColor): TConsoleAttr;
+      class function SetColor(aColor: TConsoleColor): TConsoleAttr; overload;
+      class function SetColor(aText, aBackground: TConsoleColor): TConsoleAttr; overload;
       class function SetCursorPos(aCoord: TCursorPos): TCursorPos;
       class function Tab(aCols: Word): TCursorPos;
       class function TabTo(aCol: Word): TCursorPos;
@@ -53,7 +62,7 @@ interface
       class procedure Write(const aList: TStrings); overload;
       class procedure Write(const aList: TStringArray); overload;
 
-      class procedure Write(const aColor: ConsoleColor; const aString: String); overload;
+      class procedure Write(const aColor: TConsoleColor; const aString: String); overload;
       class procedure Write(const aString: String); overload;
       class procedure Write(const aString: String; aArgs: array of const); overload;
       class procedure WriteLn(const aString: String = ''); overload;
@@ -93,7 +102,7 @@ implementation
     ATTR_INTENSE_CYAN    = ATTR_CYAN    or ATTR_INTENSE;
     ATTR_INTENSE_MAGENTA = ATTR_MAGENTA or ATTR_INTENSE;
 
-    COLOR_ATTR  : array[ConsoleColor] of Byte = (ATTR_BLACK,
+    COLOR_ATTR  : array[TConsoleColor] of Byte = (ATTR_BLACK,
                                                  ATTR_BLUE,
                                                  ATTR_GREEN,
                                                  ATTR_CYAN,
@@ -112,6 +121,7 @@ implementation
                                                 );
 
   var
+    Attrs: array of TConsoleAttr;
     Indent: Integer;
     Indents: array of Integer;
     NewLine: Boolean = TRUE;
@@ -181,14 +191,14 @@ implementation
 
   class procedure Console.ErrorLn(const aString: String);
   var
-    attr: Word;
+    attr: TConsoleAttr;
   begin
-    attr := SetColor(ATTR_RED + ATTR_INTENSE);
+    attr := SetColor(RED);
     try
       WriteLn(aString);
 
     finally
-      SetColor(attr);
+      SetAttr(attr);
     end;
   end;
 
@@ -196,14 +206,14 @@ implementation
   class procedure Console.ErrorLn(const aString: String;
                                         aArgs: array of const);
   var
-    attr: Word;
+    attr: TConsoleAttr;
   begin
-    attr := SetColor(ATTR_RED + ATTR_INTENSE);
+    attr := SetColor(RED);
     try
       WriteLn(aString, aArgs);
 
     finally
-      SetColor(attr);
+      SetAttr(attr);
     end;
   end;
 
@@ -315,6 +325,26 @@ implementation
   end;
 
 
+  class procedure Console.PopAttr;
+  var
+    idx: Integer;
+  begin
+    idx := Length(Attrs) - 1;
+    SetAttr(Attrs[idx]);
+    SetLength(Attrs, idx);
+  end;
+
+
+  class procedure Console.PushAttr(aAttr: TConsoleAttr);
+  var
+    idx: Integer;
+  begin
+    idx := Length(Attrs);
+    SetLength(Attrs, idx + 1);
+    Attrs[idx] := aAttr;
+  end;
+
+
   class procedure Console.Unindent;
   var
     i: Integer;
@@ -361,32 +391,49 @@ implementation
   end;
 
 
-  class function Console.SetColor(aFG: Byte): Word;
+  class function Console.SetAttr(aFgAttr, aBgAttr: Byte): TConsoleAttr;
+  var
+    stdOut: THandle;
+    newAttr: TConsoleAttr;
   begin
-    result := SetColor(aFG, ATTR_NO_CHANGE);
+    result  := Attr;
+    newAttr := result;
+
+    if aFgAttr <> ATTR_NO_CHANGE then
+      newAttr := (newAttr and $fff0) or aFgAttr;
+
+    if aBgAttr <> ATTR_NO_CHANGE then
+      newAttr := (newAttr and $ff0f) or (aBgAttr shl 4);
+
+    stdOut := GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(stdOut, newAttr);
   end;
 
 
-  class function Console.SetColor(aFG, aBG: Byte): Word;
-  var
-    stdOut: THandle;
-    csbi: TConsoleScreenBufferInfo;
-    attr: Word;
+  class function Console.SetBackground(aColor: TConsoleColor): TConsoleAttr;
   begin
-    stdOut := GetStdHandle(STD_OUTPUT_HANDLE);
+    result := Attr;
+    SetAttr((result and $ff0f) or (COLOR_ATTR[aColor] shl 4));
+  end;
 
-    GetConsoleScreenBufferInfo(stdOut, csbi);
 
-    attr    := csbi.wAttributes;
-    result  := attr;
+  class function Console.SetColor(aColor: TConsoleColor): TConsoleAttr;
+  begin
+    result := Attr;
+    SetAttr((result and $fff0) or COLOR_ATTR[aColor]);
+  end;
 
-    if aFG <> ATTR_NO_CHANGE then
-      attr  := (attr and $fff0) or aFG;
 
-    if aBG <> ATTR_NO_CHANGE then
-      attr  := (attr and $ff0f) or (aBG shl 4);
+  class function Console.SetColor(aText, aBackground: TConsoleColor): TConsoleAttr;
+  var
+    newAttr: TConsoleAttr;
+  begin
+    result := Attr;
 
-    SetColor(attr);
+    newAttr  := (result and $fff0) or COLOR_ATTR[aText];
+    newAttr  := (newAttr and $ff0f) or (COLOR_ATTR[aBackground] shl 4);
+
+    SetAttr(newAttr);
   end;
 
 
@@ -546,8 +593,8 @@ implementation
     s: String;
     ap: Integer;
     output: String;
-    attr: Word;
     fg, bg: Byte;
+    attr: TConsoleAttr;
   begin
 //    ClearProcessingMessage;
 
@@ -575,9 +622,9 @@ implementation
 
       if ParseAttr(s, fg, bg, output) then
       begin
-        attr := Console.SetColor(fg, bg);
+        attr := SetAttr(fg, bg);
         System.Write(output);
-        SetColor(attr);
+        SetAttr(attr);
       end
       else // Not a (valid) attr so just output the @ and carry on...
         System.Write('@');
@@ -606,14 +653,14 @@ implementation
   end;
 
 
-  class procedure Console.Write(const aColor: ConsoleColor;
+  class procedure Console.Write(const aColor: TConsoleColor;
                                 const aString: String);
   var
-    attr: Word;
+    attr: TConsoleAttr;
   begin
-    attr := SetColor(COLOR_ATTR[aColor]);
+    attr := SetColor(aColor);
     Console.Write(aString);
-    SetColor(attr);
+    SetAttr(attr);
   end;
 
 
