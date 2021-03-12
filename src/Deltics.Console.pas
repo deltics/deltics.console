@@ -7,8 +7,7 @@
 interface
 
   uses
-    Classes,
-    Deltics.Strings;
+    Deltics.Strings.Lists;
 
 
   type
@@ -60,7 +59,7 @@ interface
       class procedure Unindent;
 
       class procedure Write(const aList: TStrings); overload;
-      class procedure Write(const aList: TStringArray); overload;
+      class procedure Write(const aList: StringArray); overload;
 
       class procedure Write(const aColor: TConsoleColor; const aString: String); overload;
       class procedure Write(const aString: String); overload;
@@ -76,8 +75,7 @@ implementation
   uses
     SysUtils,
     Windows,
-    Deltics.Strings.Types;
-
+    Deltics.Strings;
 
   const
     ATTR_INTENSE   = $08;
@@ -258,7 +256,7 @@ implementation
     inPropertyRef := FALSE;
     propertyRef   := '';
 
-    refs := TComInterfacedStringList.Create;
+    refs := TStringList.CreateManaged;
 
     i       := 1;
     msgLen  := Length(aMessage);
@@ -293,10 +291,10 @@ implementation
       Inc(i);
     end;
 
-    names := TComInterfacedStringList.Create;
+    names := TStringList.CreateManaged;
     names.Unique := TRUE;
 
-    firstRef := TComInterfacedStringList.Create;
+    firstRef := TStringList.CreateManaged;
 
     for i := 0 to Pred(refs.Count) do
     begin
@@ -664,7 +662,7 @@ implementation
   end;
 
 
-  class procedure Console.Write(const aList: TStringArray);
+  class procedure Console.Write(const aList: StringArray);
   var
     i: Integer;
   begin
