@@ -7,7 +7,7 @@
 interface
 
   uses
-    Deltics.Strings.Lists;
+    Deltics.StringLists;
 
 
   type
